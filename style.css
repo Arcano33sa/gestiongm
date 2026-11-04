@@ -21,3 +21,7 @@ button,input,select,textarea{font:inherit}
 button{touch-action:manipulation}
 @media (pointer:coarse){.nav,.tab,.primary{min-height:44px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* Navegación siempre accesible durante el desplazamiento del contenido. */
+.sidebar{position:sticky;top:0;align-self:flex-start;height:100dvh;overflow-y:auto;z-index:10}
+@media(max-width:760px){.sidebar{height:auto;max-height:100dvh}.sidebar nav{margin-top:6px}.identity{padding-bottom:6px}}
