@@ -1,4 +1,4 @@
-const CACHE='sglsn-shell-v9-5';const ASSETS=['./','./index.html','./style.css','./app.js','./pending.js','./dashboard.js','./reminders.js','./excel.js','./config.js','./escudo.png','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
+const CACHE='sglsn-shell-v9-6';const ASSETS=['./','./index.html','./style.css','./app.js','./pending.js','./dashboard.js','./reminders.js','./excel.js','./config.js','./escudo.png','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));});
 self.addEventListener('activate',event=>{event.waitUntil((async()=>{const names=await caches.keys();await Promise.all(names.filter(name=>name.startsWith('sglsn-shell-')&&name!==CACHE).map(name=>caches.delete(name)));await self.clients.claim();})());});
 self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')self.skipWaiting();});
