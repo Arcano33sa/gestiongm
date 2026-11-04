@@ -1,6 +1,6 @@
 'use strict';
 const BACKUP_STORES=['pendientes','catalogos','gestiones','metadatos','recordatorios'];
-const APP_VERSION='9.2.0', BACKUP_SCHEMA=2;
+const APP_VERSION='9.4.0', BACKUP_SCHEMA=2;
 let stagedImport=null, pendingWorker=null, pwaRegistration=null;
 const cfgDate=v=>v?new Date(v).toLocaleString('es-NI',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}):'Sin registro';
 const cfgRead=(store)=>new Promise((resolve,reject)=>{const r=db.transaction(store).objectStore(store).getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
@@ -18,6 +18,8 @@ function cfgValidate(data){
  for(const s of BACKUP_STORES){const a=data.datos[s];if(!Array.isArray(a)||a.length>100000)fail('Colección inválida: '+s);const ids=new Set();for(const r of a){if(!r||typeof r!=='object'||Array.isArray(r)||typeof r.id!=='string'||!r.id.trim()||r.id.length>250||ids.has(r.id))fail('ID inválido o duplicado en '+s);ids.add(r.id);if(Object.values(r).some(v=>typeof v==='function'))fail('Registro inválido.');}}
  if(!data.conteos||BACKUP_STORES.some(s=>data.conteos[s]!==data.datos[s].length))fail('Conteos del respaldo inconsistentes.');
  const cats=new Map(data.datos.catalogos.map(x=>[x.id,x]));const pend=new Set(data.datos.pendientes.map(x=>x.id));
+ for(const r of data.datos.recordatorios)if(r.categoria!==undefined&&(typeof r.categoria!=='string'||r.categoria&&cats.get(r.categoria)?.tipo!=='categorias'))fail('Categoría de recordatorio inválida.');
+ for(const r of data.datos.recordatorios)if(r.pendienteId!==undefined&&(typeof r.pendienteId!=='string'||!pend.has(r.pendienteId)))fail('Pendiente vinculado al recordatorio no válido.');
  for(const c of data.datos.catalogos)if(!['categorias','responsables','apoyos'].includes(c.tipo)||typeof c.nombre!=='string'||!c.nombre.trim()||typeof c.activo!=='boolean')fail('Catálogo inválido.');
  for(const p of data.datos.pendientes){if(typeof p.descripcion!=='string'||!p.descripcion.trim()||!PRIORITIES.includes(p.prioridad)||!STATES.includes(p.estado)||!Number.isInteger(p.avance)||p.avance<0||p.avance>100||!pValidDate(p.fechaRegistro)||!p.fechaRegistro||!pValidDate(p.fechaLimite)||!pValidDate(p.ultimaGestion))fail('Pendiente inválido.');for(const [k,t] of [['categoria','categorias'],['responsable','responsables'],['apoyo','apoyos']])if(p[k]&&cats.get(p[k])?.tipo!==t)fail('Referencia de '+k+' inválida.');}
  for(const g of data.datos.gestiones)if(!pend.has(g.pendienteId)||typeof g.detalle!=='string'||!g.detalle.trim()||!pValidDate(g.fecha)||!g.fecha||g.hora&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(g.hora))fail('Gestión inválida o sin pendiente.');

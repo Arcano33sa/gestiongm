@@ -56,3 +56,15 @@ PWA offline-first para uso personal. Datos exclusivamente locales en IndexedDB; 
 - Activación explícita de notificaciones del navegador. Sin soporte o permiso, se conserva el aviso dentro de la app. Una notificación por fecha programada; cambiar la fecha permite un nuevo aviso.
 - Pulsar una notificación abre Recordatorios. No hay servidor push: no se garantiza entrega con la app cerrada o suspendida; se comprueba al regresar.
 - Prueba automatizada en Chrome: vencidos, futuros, resueltos, deduplicación, conversión de fecha y regresión de búsqueda, prioridades, reapertura, persistencia y respaldos. Entrega del sistema simulada; pendiente validación en dispositivo real.
+
+## Preparación para pasar a Pendientes · Etapa 1 (9.3.0)
+- El campo Nota se llama Descripción al crear y editar; los registros anteriores conservan su contenido.
+- Categoría opcional desde el catálogo existente, visible en el módulo y el Tablero. Se conservan categorías inactivas ya asignadas; las nuevas selecciones usan categorías activas.
+- Los respaldos conservan descripción, prioridad y categoría, validando su referencia al catálogo. Se aceptan recordatorios anteriores sin categoría.
+- Prueba en Chrome: crear y editar categoría, conservarla tras recarga y en respaldo; regresión de búsqueda, prioridades, avisos, reapertura e historial.
+
+## Pasar a Pendientes · Etapa 2 (9.4.0)
+- Botón Pasar a Pendientes en el módulo y el Tablero; abre el formulario de alta con descripción, prioridad y categoría precargadas. La descripción admite hasta 5000 caracteres para conservar íntegros los recordatorios.
+- Cancelar no crea registros ni resuelve el recordatorio. Guardar crea el pendiente y resuelve/vincula el recordatorio en una única transacción.
+- Se impiden traslados repetidos, incluso con formularios abiertos en varias pestañas. El historial ofrece Ver pendiente; el vínculo persiste en los respaldos.
+- Prueba en Chrome: precarga, cancelación, guardado, bloqueo de duplicados, consulta vinculada, recarga y validación del respaldo.
