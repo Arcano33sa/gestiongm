@@ -31,3 +31,9 @@ button{touch-action:manipulation}
 .reminder-search{margin-top:24px}.reminder-priority{font-weight:700;color:#21412b}.reminder-form select,.catalog-dialog select{font:inherit;padding:10px;border:1px solid #c8cbbb;border-radius:9px;background:#fff;color:#21412b;max-width:240px}
 
 .reminder-item{flex-wrap:wrap}.reminder-schedule{flex-basis:100%;margin:0;color:#6b5420;font-weight:650}.reminder-form input[type=datetime-local],.catalog-dialog input[type=datetime-local]{font:inherit;padding:10px;max-width:100%;border:1px solid #c8cbbb;border-radius:9px}#rDueBanner p{white-space:pre-wrap;overflow-wrap:anywhere;max-height:6em;overflow:auto}#rEnableNotifications{padding:10px;border:1px solid #c8cbbb;border-radius:9px;background:#fff;color:#21412b;font:inherit;cursor:pointer}
+
+/* Campos de cierre condicionales dentro de la ficha del pendiente. */
+.pending-form #pClosureFields{min-width:0;border:1px solid #b8c6b9;border-radius:10px;padding:12px}
+.pending-form #pClosureFields label{margin-top:12px}
+.pending-form #pClosureFields [hidden]{display:none}
+#cfgInactivityDays{width:180px;min-height:44px;padding:9px;border:1px solid #b8c6b9;border-radius:8px;background:#fff;color:#183b27}
