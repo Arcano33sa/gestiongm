@@ -37,3 +37,22 @@ PWA offline-first para uso personal. Datos exclusivamente locales en IndexedDB; 
 
 **Importante:** Esta entrega es un paquete final de código revisado estáticamente, no una certificación de estabilidad en dispositivos reales.
 # gestiongm
+
+## Recordatorios · Etapa 1 (9.0.0)
+- Módulo antes de Configuración: captura rápida, edición, eliminación con confirmación y marcado como resuelto.
+- El Tablero muestra todos los recordatorios pendientes, sin filtro por año, con acceso al módulo y acciones.
+- Los resueltos se conservan en el módulo. No incluye prioridades, búsqueda ni avisos programados.
+- IndexedDB se actualiza a esquema 2 sin borrar las colecciones existentes. Los respaldos JSON incluyen recordatorios y aceptan archivos anteriores de esquema 1 (sin recordatorios).
+
+## Recordatorios · Etapa 2 (9.1.0)
+- Búsqueda por texto, sin distinguir mayúsculas ni acentos, en pendientes e historial. Buscar conserva el borrador de captura rápida.
+- Prioridades Crítica, Alta, Media y Baja; las notas anteriores sin prioridad se muestran como Media. Pendientes ordenados por prioridad y fecha en el módulo y el Tablero.
+- Historial ordenado por fecha de resolución con opción Reabrir. Los reabiertos vuelven al Tablero y conservan su nota y prioridad.
+- Respaldos compatibles con recordatorios de la etapa 1.
+
+## Recordatorios · Etapa 3 (9.2.0)
+- Fecha y hora opcionales al crear o editar, según el horario local del dispositivo. Se guardan como instante UTC y se muestran en hora local. Borrar la fecha cancela el aviso.
+- Avisos vencidos visibles en todas las pantallas; comprobación cada 15 segundos con la app ejecutándose, al recuperar foco y al volver a abrir. Resolver o eliminar retira el aviso en la siguiente comprobación.
+- Activación explícita de notificaciones del navegador. Sin soporte o permiso, se conserva el aviso dentro de la app. Una notificación por fecha programada; cambiar la fecha permite un nuevo aviso.
+- Pulsar una notificación abre Recordatorios. No hay servidor push: no se garantiza entrega con la app cerrada o suspendida; se comprueba al regresar.
+- Prueba automatizada en Chrome: vencidos, futuros, resueltos, deduplicación, conversión de fecha y regresión de búsqueda, prioridades, reapertura, persistencia y respaldos. Entrega del sistema simulada; pendiente validación en dispositivo real.
