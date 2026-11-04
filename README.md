@@ -36,3 +36,4 @@ PWA offline-first para uso personal. Datos exclusivamente locales en IndexedDB; 
 - Pruebas de rendimiento con numerosos registros, consola y accesibilidad con teclado/VoiceOver.
 
 **Importante:** Esta entrega es un paquete final de código revisado estáticamente, no una certificación de estabilidad en dispositivos reales.
+# gestiongm
