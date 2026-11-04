@@ -1,6 +1,6 @@
 'use strict';
 const BACKUP_STORES=['pendientes','catalogos','gestiones','metadatos','recordatorios'];
-const APP_VERSION='9.9.0', BACKUP_SCHEMA=5;
+const APP_VERSION='9.10.0', BACKUP_SCHEMA=6;
 let stagedImport=null, pendingWorker=null, pwaRegistration=null;
 const cfgDate=v=>v?new Date(v).toLocaleString('es-NI',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}):'Sin registro';
 const cfgRead=(store)=>new Promise((resolve,reject)=>{const r=db.transaction(store).objectStore(store).getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
@@ -10,7 +10,7 @@ const cfgStatus=(message,error=false)=>{const el=document.getElementById('cfgSta
 async function cfgSnapshot(){const pairs=await Promise.all(BACKUP_STORES.map(async s=>[s,await cfgRead(s)]));return Object.fromEntries(pairs);}
 function cfgValidate(data){
  const fail=m=>{throw Error(m);};
- if(!data||typeof data!=='object'||Array.isArray(data)||data.formato!=='SGLSN-RESPALDO'||![1,2,3,4,BACKUP_SCHEMA].includes(data.esquema))fail('Formato o versión de esquema incompatible.');
+ if(!data||typeof data!=='object'||Array.isArray(data)||data.formato!=='SGLSN-RESPALDO'||![1,2,3,4,5,BACKUP_SCHEMA].includes(data.esquema))fail('Formato o versión de esquema incompatible.');
  if(!data.creado||Number.isNaN(Date.parse(data.creado)))fail('Fecha del respaldo inválida.');
  if(!data.datos||typeof data.datos!=='object'||Array.isArray(data.datos))fail('Faltan los datos del respaldo.');
  if(data.esquema===1){data={...data,datos:{...data.datos,recordatorios:[]},conteos:{...data.conteos,recordatorios:0}};}
@@ -32,7 +32,10 @@ function cfgValidate(data){
   if(h.campo==='archivado'&&[h.anterior,h.nuevo].some(v=>!['Sí','No'].includes(v)))fail('Archivo de historial inválido.');
   ids.add(h.id);
  }
- }for(const [k,t] of [['categoria','categorias'],['responsable','responsables'],['apoyo','apoyos']])if(p[k]&&cats.get(p[k])?.tipo!==t)fail('Referencia de '+k+' inválida.');}
+ }for(const [k,t] of [['categoria','categorias'],['responsable','responsables']])if(p[k]&&cats.get(p[k])?.tipo!==t)fail('Referencia de '+k+' inválida.');
+ if(p.apoyo!==undefined&&typeof p.apoyo!=='string'&&!Array.isArray(p.apoyo))fail('Apoyos inválidos.');
+ const apoyos=pSupportIds(p.apoyo);if(new Set(apoyos).size!==apoyos.length||apoyos.some(id=>typeof id!=='string'||!id||cats.get(id)?.tipo!=='apoyos'))fail('Referencia de apoyo inválida.');
+ }
  for(const g of data.datos.gestiones)if(!pend.has(g.pendienteId)||typeof g.detalle!=='string'||!g.detalle.trim()||!pValidDate(g.fecha)||!g.fecha||g.hora&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(g.hora))fail('Gestión inválida o sin pendiente.');
  for(const m of data.datos.metadatos){if(!m.id||!Object.hasOwn(m,'value'))fail('Metadato inválido.');if(m.id===P_INACTIVITY_KEY&&(!Number.isInteger(m.value)||m.value<1||m.value>365))fail('Plazo de inactividad inválido (1 a 365 días).');}
  return data.datos;

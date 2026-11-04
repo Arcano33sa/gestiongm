@@ -76,7 +76,7 @@ const root=path.resolve(__dirname,'..');
   // Validate JSON, reject malformed history, support legacy schema and merge without duplicates.
   const backupEvent=page.waitForEvent('download');await page.locator('.nav[data-page=configuracion]').click();await page.locator('#cfgExport').click();
   const backup=await backupEvent;const backupPath=path.join(out,'history.json');await backup.saveAs(backupPath);
-  const payload=JSON.parse(fs.readFileSync(backupPath,'utf8'));assert.equal(payload.esquema,5);
+  const payload=JSON.parse(fs.readFileSync(backupPath,'utf8'));assert.equal(payload.esquema,6);
   const checks=await page.evaluate(payload=>{
    const old=structuredClone(payload);old.esquema=2;for(const p of old.datos.pendientes)delete p.historialCambios;
    const older=structuredClone(old);older.esquema=1;delete older.datos.recordatorios;delete older.conteos.recordatorios;

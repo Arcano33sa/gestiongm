@@ -101,7 +101,7 @@ const root=path.resolve(__dirname,'..');
   await page.evaluate(()=>{pFilters.q='sin coincidencias';});const empty=await exportExcel('empty.xlsx');assert.equal((empty['xl/worksheets/sheet4.xml'].match(/<row /g)||[]).length,1);assert.ok(empty['xl/worksheets/sheet1.xml'].includes('No evaluable'));
   // Real backup/restore and closure validation, including merge from old backups.
   await page.locator('.nav[data-page=configuracion]').click();const jsonEvent=page.waitForEvent('download');await page.locator('#cfgExport').click();const file=await jsonEvent;const backupPath=path.join(out,'closures.json');await file.saveAs(backupPath);
-  const payload=JSON.parse(fs.readFileSync(backupPath,'utf8'));assert.equal(payload.esquema,5);
+  const payload=JSON.parse(fs.readFileSync(backupPath,'utf8'));assert.equal(payload.esquema,6);
   const validation=await page.evaluate(payload=>{
    const current=cfgValidate(payload),old=structuredClone(current);for(const p of old.pendientes){delete p.historialCierres;delete p.fechaCierre;delete p.resultadoCierre;delete p.motivoCancelacion;}
    const merged=cfgMerge(current,old,'fusionar');cfgValidateMerged(merged);const twice=cfgMerge(merged,current,'fusionar');cfgValidateMerged(twice);
