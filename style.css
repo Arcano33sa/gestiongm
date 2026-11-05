@@ -45,3 +45,18 @@ button{touch-action:manipulation}
 .pending-form #pSupportCreate[hidden]{display:none}
 
 .pending-actions [data-premove]{color:#9e2525;border:1px solid #c98c8c;border-radius:5px;background:#fff5f5;cursor:pointer}
+
+/* Matriz: priorizar columnas legibles y desplazamiento horizontal. */
+.pending-table th:not(:last-child),
+.pending-table td:not(:last-child){min-width:140px;max-width:none;white-space:nowrap;overflow-wrap:normal}
+.pending-table th:nth-child(3),.pending-table td:nth-child(3),
+.pending-table th:nth-child(5),.pending-table td:nth-child(5){min-width:240px}
+.pending-table th:nth-child(6),.pending-table td:nth-child(6){min-width:320px}
+.pending-table th:nth-child(4),.pending-table td:nth-child(4),
+.pending-table th:nth-child(11),.pending-table td:nth-child(11),
+.pending-table th:nth-child(12),.pending-table td:nth-child(12),
+.pending-table th:nth-child(15),.pending-table td:nth-child(15),
+.pending-table th:nth-child(16),.pending-table td:nth-child(16){min-width:360px;max-width:480px;white-space:normal;overflow-wrap:anywhere}
+.pending-table th:last-child,.pending-table td:last-child{max-width:none;white-space:nowrap;overflow-wrap:normal}
+.pending-table .pending-actions{flex-wrap:nowrap;align-items:center;width:max-content}
+.pending-table .pending-actions button{flex-shrink:0}
