@@ -139,3 +139,21 @@ PWA offline-first para uso personal. Datos exclusivamente locales en IndexedDB; 
 - Buscar no anuncia ausencia de novedades mientras se descarga una versión. Aplicar espera la activación o el cambio de controlador y recarga; admite páginas sin controlador y permite reintentar si la activación no responde. Cancelar o tener una importación pendiente conserva la instalación actual.
 - La versión visible de Configuración y del pie es 9.11.0; la caché de esta publicación es `sglsn-shell-v9-16`. Las futuras publicaciones deben actualizar esos identificadores de forma coherente.
 - Prueba: `NODE_PATH=/ruta/a/node_modules CHROME_PATH=/ruta/a/chrome node tests/pwa-update.smoke.cjs`. Usa un servidor y perfil temporales, simula publicaciones distintas y una descarga fallida. Comprueba disponibilidad del botón sin segunda búsqueda, aplicación y recarga, cancelación, bloqueo por importación, conservación de colecciones y configuración, ausencia de novedades, búsqueda sin red, recarga y guardado offline, reintento y aplicación sin controlador. No usa los datos de la instalación personal.
+
+## Matriz resumida · Etapa 1 (9.12.0)
+
+- La matriz muestra Descripción, Responsable, Prioridad y Estado, además del selector de acciones. «Ver» abre la ficha completa en el modal existente, con gestiones e historiales. La búsqueda sigue incluyendo los datos que ya no aparecen como columnas; los campos de exportación y los datos guardados se conservan.
+- Se ajustaron los anchos para evitar el desplazamiento horizontal en escritorio; en pantallas estrechas la tabla mantiene desplazamiento horizontal. La paginación de 10 filas y los filtros compactos corresponden a las siguientes etapas.
+- Validación: `tests/pending-action-selector.smoke.cjs`, consulta modal y campos de detalle, edición, archivo/restauración, calendario, borrado y gestiones vinculadas, recarga y vistas de 1440 y 390 px. Caché PWA: `sglsn-shell-v9-17`.
+
+## Paginación de pendientes · Etapa 2 (9.13.0)
+
+- La matriz muestra un máximo de 10 registros por página, con botones Anterior/Siguiente, rango visible, total de resultados y número de página. Los controles se desactivan en los extremos; una búsqueda vacía muestra 0 resultados.
+- Cambiar filtros, búsqueda u orden vuelve a la primera página. Si se reduce el conjunto por archivo o borrado, se ajusta la página al último número disponible. La paginación se aplica después del filtrado y ordenamiento; Excel sigue exportando el conjunto completo de su alcance, independientemente de la página visible.
+- Prueba `tests/pending-pagination-stage2.smoke.cjs`: distribución 10/10/3 sin solapamiento entre las primeras páginas, navegación, consulta modal desde la última página, reinicio por prioridad/búsqueda/orden, resultados vacíos, ajuste tras borrado, recarga y controles en escritorio y móvil. Regresión de acciones: `tests/pending-action-selector.smoke.cjs`. Caché PWA: `sglsn-shell-v9-18`.
+
+## Visualización compacta · Etapa 3 (9.14.0)
+
+- Búsqueda, Responsable y Estado permanecen visibles. «Más filtros» agrupa Mostrar, Prioridad, Categoría, Movimiento, Ordenar y Dirección; indica el número de filtros secundarios activos y conserva su despliegue al filtrar o paginar durante la sesión.
+- Las descripciones ocupan como máximo dos líneas en la matriz; el texto completo permanece en la ficha modal. La tabla tiene una altura máxima de 60% de la ventana y desplazamiento interno, con encabezados fijos; la paginación permanece fuera de la zona desplazable.
+- Prueba `tests/pending-compact-stage3.smoke.cjs`: visibilidad de controles, filtro activo al cerrar, conservación del despliegue, paginación, descripción completa en modal, límite de dos líneas y encabezados fijos en escritorio y móvil. Regresiones de paginación y acciones. Versión 9.14.0; caché PWA `sglsn-shell-v9-19`.

@@ -1,6 +1,6 @@
 'use strict';
 const BACKUP_STORES=['pendientes','catalogos','gestiones','metadatos','recordatorios'];
-const APP_VERSION='9.11.0', BACKUP_SCHEMA=6;
+const APP_VERSION='9.14.0', BACKUP_SCHEMA=6;
 let stagedImport=null, pendingWorker=null, pwaRegistration=null;
 const cfgDate=v=>v?new Date(v).toLocaleString('es-NI',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}):'Sin registro';
 const cfgRead=(store)=>new Promise((resolve,reject)=>{const r=db.transaction(store).objectStore(store).getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
