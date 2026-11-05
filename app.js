@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
  }
  if(!db)document.getElementById('view').insertAdjacentHTML('afterbegin','<p class="notice" role="alert">No se pudo acceder al almacenamiento local. Verifica los permisos y evita el modo privado.</p>');
  if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')){
-  try{await navigator.serviceWorker.register('./sw.js');}catch(error){console.warn('PWA sin service worker:',error);}
+  try{const reg=await navigator.serviceWorker.register('./sw.js');cfgObserveRegistration(reg);}catch(error){console.warn('PWA sin service worker:',error);}
  }
 },{once:true});
 

@@ -1,6 +1,6 @@
 'use strict';
 const BACKUP_STORES=['pendientes','catalogos','gestiones','metadatos','recordatorios'];
-const APP_VERSION='9.10.0', BACKUP_SCHEMA=6;
+const APP_VERSION='9.11.0', BACKUP_SCHEMA=6;
 let stagedImport=null, pendingWorker=null, pwaRegistration=null;
 const cfgDate=v=>v?new Date(v).toLocaleString('es-NI',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}):'Sin registro';
 const cfgRead=(store)=>new Promise((resolve,reject)=>{const r=db.transaction(store).objectStore(store).getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
@@ -47,10 +47,84 @@ async function cfgFile(file){stagedImport=null;const preview=document.getElement
 async function cfgCommit(){if(!stagedImport||!db)return;const mode=document.getElementById('cfgMode').value;const {incoming}=stagedImport;try{const latest=await cfgSnapshot();if(JSON.stringify(latest)!==JSON.stringify(stagedImport.current)){cfgStatus('Los datos cambiaron desde la vista previa. Selecciona de nuevo el archivo antes de importar para evitar sobrescrituras.',true);stagedImport=null;document.getElementById('cfgPreview').hidden=true;return;}const merged=cfgMerge(latest,incoming,mode);cfgValidateMerged(merged);if(mode==='reemplazar'&&!confirm('REEMPLAZAR borrará los registros actuales. Descarga primero un respaldo actual. ¿Deseas continuar?'))return;const word=mode==='reemplazar'?'REEMPLAZAR':'FUSIONAR';if(prompt('Confirmación reforzada: escribe '+word+' para continuar.')!==word){cfgStatus('Importación cancelada.');return;}
  const tx=db.transaction(BACKUP_STORES,'readwrite');for(const s of BACKUP_STORES){const store=tx.objectStore(s);store.clear();for(const r of merged[s])store.put(r);}tx.objectStore('metadatos').put({id:'cfg-last-import',value:new Date().toISOString()});await new Promise((resolve,reject)=>{tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||Error('Transacción fallida'));tx.onabort=()=>reject(tx.error||Error('Transacción abortada'));});stagedImport=null;document.getElementById('cfgPreview').hidden=true;document.getElementById('cfgFile').value='';cfgStatus('Importación completada y confirmada en IndexedDB.');await cfgDates();const limitInput=document.getElementById('cfgInactivityDays');if(limitInput){limitInput.value=await pInactivityLimit();document.getElementById('cfgInactivityStatus').textContent='Plazo restaurado: '+limitInput.value+' días.';}await renderCatalogs();}catch(e){cfgStatus('No se importó: '+e.message,true);}}
 async function cfgDates(){for(const [id,key] of [['cfgExportDate','cfg-last-export'],['cfgImportDate','cfg-last-import'],['cfgSearchDate','cfg-last-search'],['cfgUpdateDate','cfg-last-update']]){const el=document.getElementById(id);if(el&&db)el.textContent=cfgDate(await cfgMeta(key));}}
-function cfgWorkerWaiting(reg){pendingWorker=reg?.waiting||null;const button=document.getElementById('cfgApply');if(button)button.hidden=!pendingWorker;}
-async function cfgCheck(){try{if(!('serviceWorker' in navigator))throw Error('Service Worker no disponible.');if(!navigator.onLine)throw Error('Necesitas conexión para buscar actualizaciones.');const reg=await navigator.serviceWorker.getRegistration('./');if(!reg)throw Error('No hay Service Worker registrado. Abre la app desde HTTPS o localhost.');pwaRegistration=reg;await reg.update();await cfgSet('cfg-last-search',new Date().toISOString());await cfgDates();cfgWorkerWaiting(reg);cfgStatus(reg.waiting?'Actualización descargada y lista para aplicar.':'Búsqueda completada. No hay una actualización lista para aplicar.');}catch(e){cfgStatus('No se pudo comprobar: '+e.message,true);}}
-async function cfgApply(){if(!pendingWorker)return;if(document.querySelector('dialog[open]')||stagedImport){cfgStatus('Cierra formularios o termina la importación antes de actualizar.',true);return;}if(!confirm('Se recargará la aplicación. Asegúrate de haber guardado tus cambios. ¿Continuar?'))return;const worker=pendingWorker;const controller=navigator.serviceWorker.controller;if(!controller){cfgStatus('Recarga la página antes de aplicar la actualización.',true);return;}let changed=false;const onChange=async()=>{if(changed)return;changed=true;navigator.serviceWorker.removeEventListener('controllerchange',onChange);try{await cfgSet('cfg-last-update',new Date().toISOString());}catch(e){console.warn(e);}location.reload();};navigator.serviceWorker.addEventListener('controllerchange',onChange);worker.postMessage({type:'SKIP_WAITING'});cfgStatus('Aplicando actualización. Esperando confirmación del navegador…');}
-async function renderConfig(){const root=document.getElementById('cfgPanel');if(!root)return;root.innerHTML=`<div class="grid"><article class="card"><h3>Respaldo JSON</h3><p>Incluye pendientes, recordatorios, catálogos, gestiones, historiales de cambios y cierres, y metadatos. No incluye cachés ni credenciales.</p><button class="primary" id="cfgExport">Exportar respaldo JSON completo</button><p>Último respaldo exportado: <strong id="cfgExportDate">—</strong></p><label class="cfg-label">Importar JSON <input type="file" accept=".json,application/json" id="cfgFile"></label><p>Última importación: <strong id="cfgImportDate">—</strong></p><p class="cfg-hint">Las fechas son locales y no prueban que el archivo esté guardado fuera del dispositivo.</p></article><article class="card"><h3>Actualizaciones PWA</h3><p>Versión de esta instalación: <strong>${APP_VERSION}</strong></p><button class="primary" id="cfgCheck">Buscar actualizaciones</button> <button class="primary" id="cfgApply" hidden>Aplicar actualización</button><p>Última búsqueda: <strong id="cfgSearchDate">—</strong></p><p>Última actualización: <strong id="cfgUpdateDate">—</strong></p><p class="cfg-hint">Comprobar requiere conexión y una versión nueva publicada. Los datos permanecen en IndexedDB.</p></article></div><article class="card"><h3>Detección de asuntos sin movimiento</h3><form id="cfgInactivityForm"><label class="cfg-label">Plazo sin gestiones (días)<input id="cfgInactivityDays" name="dias" type="number" min="1" max="365" step="1" required value="14"></label><p>Se marcan los asuntos abiertos al alcanzar este plazo desde su última gestión; si no tuvieron gestiones, desde Fecha Registro. Editar el pendiente no reinicia el conteo.</p><button type="submit" class="primary">Guardar plazo</button><p id="cfgInactivityStatus" role="status" aria-live="polite"></p></form></article><div id="cfgStatus" role="status" aria-live="polite"></div><section class="cfg-preview" id="cfgPreview" hidden></section>`;root.querySelector('#cfgExport').onclick=cfgExport;root.querySelector('#cfgFile').onchange=e=>cfgFile(e.target.files[0]);root.querySelector('#cfgCheck').onclick=cfgCheck;root.querySelector('#cfgApply').onclick=cfgApply;if(!db){cfgStatus('IndexedDB no está disponible.',true);return;}const inactivityInput=root.querySelector('#cfgInactivityDays'),inactivityForm=root.querySelector('#cfgInactivityForm');
+let cfgPwaMessage='Comprobación pendiente.',cfgPwaError=false,cfgChecking=false,cfgApplying=false;
+const cfgRegistrations=new WeakSet(),cfgWorkers=new WeakSet();
+function cfgPwaStatus(message,error=false){
+ cfgPwaMessage=message;cfgPwaError=error;
+ const el=document.getElementById('cfgPwaStatus');
+ if(el){el.textContent=message;el.className=error?'cfg-error':'cfg-success';}
+ const check=document.getElementById('cfgCheck'),apply=document.getElementById('cfgApply');
+ if(check)check.disabled=cfgChecking||cfgApplying||pwaRegistration?.installing?.state==='installing';
+ if(apply){apply.hidden=!pendingWorker;apply.disabled=cfgChecking||cfgApplying;}
+}
+function cfgWorkerWaiting(reg){
+ pendingWorker=reg?.waiting||null;
+ cfgPwaStatus(cfgPwaMessage,cfgPwaError);
+}
+function cfgObserveRegistration(reg){
+ pwaRegistration=reg;
+ const observe=worker=>{
+  if(!worker||cfgWorkers.has(worker))return;
+  cfgWorkers.add(worker);
+  const changed=()=>{
+   if(cfgApplying)return;
+   cfgWorkerWaiting(reg);
+   if(reg.waiting||(worker.state==='installed'&&reg.active)){
+    pendingWorker=reg.waiting||worker;
+    cfgPwaStatus('Actualización descargada y lista para aplicar.');
+   }else if(worker.state==='installing')cfgPwaStatus('Descargando actualización…');
+   else if(worker.state==='redundant')cfgPwaStatus('No se pudo instalar la actualización. Intenta buscar nuevamente.',true);
+   else if(worker.state==='activated')cfgPwaStatus('Aplicación lista. Puedes buscar nuevas actualizaciones.');
+  };
+  worker.addEventListener('statechange',changed);changed();
+ };
+ if(!cfgRegistrations.has(reg)){
+  cfgRegistrations.add(reg);
+  reg.addEventListener('updatefound',()=>observe(reg.installing));
+ }
+ cfgWorkerWaiting(reg);observe(reg.installing);
+ if(reg.waiting)cfgPwaStatus('Actualización descargada y lista para aplicar.');
+}
+async function cfgCheck(){
+ if(cfgChecking||cfgApplying)return;
+ cfgChecking=true;cfgPwaStatus('Buscando actualizaciones…');
+ try{
+  if(!('serviceWorker' in navigator))throw Error('Este navegador no admite actualizaciones PWA.');
+  if(!navigator.onLine)throw Error('Necesitas conexión para buscar actualizaciones.');
+  const reg=await navigator.serviceWorker.getRegistration('./')||await navigator.serviceWorker.register('./sw.js');
+  cfgObserveRegistration(reg);
+  await reg.update();
+  cfgWorkerWaiting(reg);
+  if(reg.waiting)cfgPwaStatus('Actualización descargada y lista para aplicar.');
+  else if(reg.installing)cfgPwaStatus('Descargando actualización…');
+  else cfgPwaStatus('Búsqueda completada. No hay actualizaciones nuevas.');
+  // Un fallo al guardar la fecha no debe ocultar una actualización disponible.
+  try{await cfgSet('cfg-last-search',new Date().toISOString());await cfgDates();}catch(error){console.warn('No se pudo guardar la fecha de búsqueda:',error);}
+ }catch(error){cfgPwaStatus('No se pudo buscar: '+error.message,true);}
+ finally{cfgChecking=false;cfgPwaStatus(cfgPwaMessage,cfgPwaError);}
+}
+async function cfgApply(){
+ if(cfgApplying||cfgChecking||!pendingWorker)return;
+ if(document.querySelector('dialog[open]')||stagedImport){cfgPwaStatus('Cierra formularios o termina la importación antes de actualizar.',true);return;}
+ if(!confirm('Se recargará la aplicación. Asegúrate de haber guardado tus cambios. ¿Continuar?'))return;
+ const worker=pendingWorker;
+ cfgApplying=true;cfgPwaStatus('Aplicando actualización…');
+ let finished=false;
+ const cleanup=()=>{clearTimeout(timer);navigator.serviceWorker.removeEventListener('controllerchange',onController);worker.removeEventListener('statechange',onState);};
+ const reload=async()=>{
+  if(finished)return;finished=true;cleanup();
+  try{await cfgSet('cfg-last-update',new Date().toISOString());}catch(error){console.warn('No se pudo guardar la fecha de actualización:',error);}
+  location.reload();
+ };
+ const onController=()=>{if(navigator.serviceWorker.controller===worker)reload();};
+ const onState=()=>{if(worker.state==='activated')reload();else if(worker.state==='redundant')fail('La actualización no pudo activarse. Busca nuevamente.');};
+ const fail=message=>{if(finished)return;finished=true;cleanup();cfgApplying=false;cfgPwaStatus(message,true);};
+ const timer=setTimeout(()=>fail('La actualización no respondió. Puedes volver a intentarlo.'),20000);
+ navigator.serviceWorker.addEventListener('controllerchange',onController);
+ worker.addEventListener('statechange',onState);
+ try{if(worker.state==='activated')await reload();else worker.postMessage({type:'SKIP_WAITING'});}catch(error){fail('No se pudo aplicar: '+error.message);}
+}
+async function renderConfig(){const root=document.getElementById('cfgPanel');if(!root)return;root.innerHTML=`<div class="grid"><article class="card"><h3>Respaldo JSON</h3><p>Incluye pendientes, recordatorios, catálogos, gestiones, historiales de cambios y cierres, y metadatos. No incluye cachés ni credenciales.</p><button class="primary" id="cfgExport">Exportar respaldo JSON completo</button><p>Último respaldo exportado: <strong id="cfgExportDate">—</strong></p><label class="cfg-label">Importar JSON <input type="file" accept=".json,application/json" id="cfgFile"></label><p>Última importación: <strong id="cfgImportDate">—</strong></p><p class="cfg-hint">Las fechas son locales y no prueban que el archivo esté guardado fuera del dispositivo.</p></article><article class="card"><h3>Actualizaciones PWA</h3><p>Versión de esta instalación: <strong>${APP_VERSION}</strong></p><button class="primary" id="cfgCheck">Buscar actualizaciones</button> <button class="primary" id="cfgApply" hidden>Aplicar actualización</button><p id="cfgPwaStatus" role="status" aria-live="polite"></p><p>Última búsqueda: <strong id="cfgSearchDate">—</strong></p><p>Última actualización: <strong id="cfgUpdateDate">—</strong></p><p class="cfg-hint">Comprobar requiere conexión y una versión nueva publicada. Los datos permanecen en IndexedDB.</p></article></div><article class="card"><h3>Detección de asuntos sin movimiento</h3><form id="cfgInactivityForm"><label class="cfg-label">Plazo sin gestiones (días)<input id="cfgInactivityDays" name="dias" type="number" min="1" max="365" step="1" required value="14"></label><p>Se marcan los asuntos abiertos al alcanzar este plazo desde su última gestión; si no tuvieron gestiones, desde Fecha Registro. Editar el pendiente no reinicia el conteo.</p><button type="submit" class="primary">Guardar plazo</button><p id="cfgInactivityStatus" role="status" aria-live="polite"></p></form></article><div id="cfgStatus" role="status" aria-live="polite"></div><section class="cfg-preview" id="cfgPreview" hidden></section>`;root.querySelector('#cfgExport').onclick=cfgExport;root.querySelector('#cfgFile').onchange=e=>cfgFile(e.target.files[0]);root.querySelector('#cfgCheck').onclick=cfgCheck;root.querySelector('#cfgApply').onclick=cfgApply;cfgPwaStatus(cfgPwaMessage,cfgPwaError);if(!db){cfgStatus('IndexedDB no está disponible.',true);return;}const inactivityInput=root.querySelector('#cfgInactivityDays'),inactivityForm=root.querySelector('#cfgInactivityForm');
 try{const limit=await pInactivityLimit();if(!inactivityInput.isConnected)return;inactivityInput.value=limit;}catch{root.querySelector('#cfgInactivityStatus').textContent='No se pudo leer el plazo guardado.';}
 inactivityForm.onsubmit=async event=>{event.preventDefault();const days=Number(inactivityInput.value),status=root.querySelector('#cfgInactivityStatus'),button=inactivityForm.querySelector('button');if(!inactivityInput.value||!Number.isInteger(days)||days<1||days>365){status.textContent='Indica un número entero entre 1 y 365 días.';return;}button.disabled=true;try{await cfgSet(P_INACTIVITY_KEY,days);status.textContent='Plazo guardado: '+days+' días.';window.dispatchEvent(new Event('sglsn-data-changed'));}catch(error){status.textContent='No se pudo guardar: '+error.message;}finally{button.disabled=false;}};
-await cfgDates();const reg=await navigator.serviceWorker?.getRegistration('./').catch(()=>null);if(reg){pwaRegistration=reg;cfgWorkerWaiting(reg);reg.addEventListener('updatefound',()=>{const installing=reg.installing;if(installing)installing.addEventListener('statechange',()=>{if(installing.state==='installed'&&navigator.serviceWorker.controller){cfgWorkerWaiting(reg);cfgStatus('Nueva versión descargada. Puedes aplicar la actualización.');}});});}}
+await cfgDates();const reg=await navigator.serviceWorker?.getRegistration('./').catch(()=>null);if(reg)cfgObserveRegistration(reg);}

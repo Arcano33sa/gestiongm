@@ -133,3 +133,9 @@ PWA offline-first para uso personal. Datos exclusivamente locales en IndexedDB; 
 - Las asignaciones antiguas de una persona se leen directamente; al guardar, `apoyo` pasa a ser una lista de IDs (vacía si no se asigna nadie).
 - La matriz, búsqueda y Excel incluyen todos los nombres. Los respaldos usan esquema 6 y siguen admitiendo los esquemas 1–5.
 - Prueba de navegador: `tests/multiple-supports.smoke.cjs`, con Playwright y JSZip disponibles en NODE_PATH; CHROME_PATH permite usar un Chrome instalado.
+
+## Actualizaciones PWA (9.11.0)
+- El estado de búsqueda aparece junto a los botones: buscando, descargando, lista para aplicar, sin novedades o error. Se observa el registro desde el inicio y también una instalación que ya esté en curso al abrir Configuración.
+- Buscar no anuncia ausencia de novedades mientras se descarga una versión. Aplicar espera la activación o el cambio de controlador y recarga; admite páginas sin controlador y permite reintentar si la activación no responde. Cancelar o tener una importación pendiente conserva la instalación actual.
+- La versión visible de Configuración y del pie es 9.11.0; la caché de esta publicación es `sglsn-shell-v9-16`. Las futuras publicaciones deben actualizar esos identificadores de forma coherente.
+- Prueba: `NODE_PATH=/ruta/a/node_modules CHROME_PATH=/ruta/a/chrome node tests/pwa-update.smoke.cjs`. Usa un servidor y perfil temporales, simula publicaciones distintas y una descarga fallida. Comprueba disponibilidad del botón sin segunda búsqueda, aplicación y recarga, cancelación, bloqueo por importación, conservación de colecciones y configuración, ausencia de novedades, búsqueda sin red, recarga y guardado offline, reintento y aplicación sin controlador. No usa los datos de la instalación personal.
